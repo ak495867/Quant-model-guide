@@ -15,7 +15,7 @@ This is a **research and education workflow**, not a trading recommendation. The
 ## Core Philosophy
 
 | Principle | What it means |
-|-----------|---------------|
+| --- | --- |
 | **Define the object first** | Decide whether the model forecasts returns, prices, volatility, correlations, defaults, or option values |
 | **Respect the information set** | Use only data that would have been available at the decision time |
 | **Separate calibration from evaluation** | Fit parameters on past data and judge them on later, unseen data |
@@ -33,7 +33,7 @@ This is a **research and education workflow**, not a trading recommendation. The
 Quantitative finance is not one model. It is a family of model classes with different targets, assumptions, and failure modes. Before writing code, identify the family.
 
 | Model family | Mathematical target | Typical tools | Main danger |
-|--------------|---------------------|---------------|-------------|
+| --- | --- | --- | --- |
 | **Descriptive** | Estimate return, volatility, covariance, or correlation | Rolling statistics, EWMA, factor models | Treating historical summaries as permanent truths |
 | **Forecasting** | Predict a future return, volatility, probability, or state | Regression, time-series models, state-space models | Leakage, unstable relationships, data mining |
 | **Portfolio construction** | Map forecasts and risk estimates to weights | Mean-variance, risk parity, shrinkage, constraints | Extreme weights and estimation error |
@@ -47,49 +47,48 @@ The notebook focuses on the forecasting-plus-portfolio-construction path because
 
 ## The Mathematical Skeleton
 
-Let \(P_{i,t}\) be the price of asset \(i\) at time \(t\). A simple close-to-close return is:
+Let $$P_{i,t}$$ be the price of asset $$i$$ at time $$t$$. A simple close-to-close return is:
 
-\[
+$$
 r_{i,t} = \frac{P_{i,t}}{P_{i,t-1}} - 1.
-\]
+$$
 
-A forecasting model maps an information vector \(x_{i,t}\), built only from information available before the decision, to a next-period forecast:
+A forecasting model maps an information vector $$x_{i,t}$$, built only from information available before the decision, to a next-period forecast:
 
-\[
+$$
 \widehat{r}_{i,t+1} = f(x_{i,t}; \theta).
-\]
+$$
 
-In the notebook, \(f\) is a pooled ridge regression. The model is deliberately modest so that the data flow remains visible:
+In the notebook, $$f$$ is a pooled ridge regression. The model is deliberately modest so that the data flow remains visible:
 
-\[
+$$
 \widehat{\beta} = \arg\min_{\beta}
-\left\{
-\|y - X\beta\|_2^2 + \lambda\|\beta\|_2^2
-\right\}.
-\]
+\left(
+\lVert y - X\beta \rVert_2^2 + \lambda \lVert \beta \rVert_2^2
+\right).
+$$
 
 The forecasts are converted into portfolio weights using a simple volatility-aware score:
 
-\[
+$$
 s_{i,t} = \frac{\widehat{r}_{i,t+1}}{\widehat{\sigma}_{i,t}},
 \qquad
-w_t = \frac{s_t}{\sum_i |s_{i,t}|}.
-\]
+w_t = \frac{s_t}{\sum_i \lvert s_{i,t} \rvert}.
+$$
 
 The simulated portfolio return includes turnover costs:
 
-\[
-r^p_{t+1} = w_t^\top r_{t+1}
-- c\|w_t - w_{t-1}\|_1,
-\]
+$$
+r^p_{t+1} = w_t^\top r_{t+1} - c\lVert w_t - w_{t-1} \rVert_1.
+$$
 
-where \(c\) is the one-way cost rate and the L1 norm measures the amount traded. The exact weight rule is a demonstration, not a universal prescription. In a production system, it would need constraints for leverage, liquidity, concentration, borrow availability, and risk limits.
+where $$c$$ is the one-way cost rate and the L1 norm measures the amount traded. The exact weight rule is a demonstration, not a universal prescription. In a production system, it would need constraints for leverage, liquidity, concentration, borrow availability, and risk limits.
 
-For a portfolio covariance matrix \(\Sigma_t\), the model-implied volatility is:
+For a portfolio covariance matrix $$\Sigma_t$$, the model-implied volatility is:
 
-\[
+$$
 \sigma_{p,t} = \sqrt{w_t^\top \Sigma_t w_t}.
-\]
+$$
 
 The notebook reports annualized volatility, maximum drawdown, turnover, and Sharpe ratio. Sharpe is useful but not complete: its interpretation depends on the return basis and risk definition, and it does not capture the portfolio's full correlation structure.[1]
 
@@ -100,7 +99,7 @@ The notebook reports annualized volatility, maximum drawdown, turnover, and Shar
 Quant Models uses four liquid, widely followed exchange-traded instruments as a **public-data demonstration universe**: `SPY`, `QQQ`, `TLT`, and `GLD`. The code downloads adjusted historical prices through `yfinance`, which is convenient for a notebook but should be cross-checked against an appropriate institutional or primary source for serious research.[4]
 
 | Component | Notebook choice | Why it exists |
-|-----------|-----------------|---------------|
+| --- | --- | --- |
 | Universe | `SPY`, `QQQ`, `TLT`, `GLD` | Small multi-asset example with distinct behavior |
 | Target | Next-period total return proxy | Makes the prediction horizon explicit |
 | Features | Lagged momentum, volatility, moving-average gap, market return | Demonstrates common mathematical feature families |
@@ -631,10 +630,10 @@ Randomly shuffling time-series rows can place future regimes in the training set
 ## Model Families to Add Next
 
 | Upgrade | Mathematical extension | What it teaches |
-|---------|------------------------|------------------|
-| **EWMA volatility** | \(\sigma_t^2 = \lambda\sigma_{t-1}^2 + (1-\lambda)r_t^2\) | Conditional risk estimation |
+| --- | --- | --- |
+| **EWMA volatility** | $$\sigma_t^2 = \lambda\sigma_{t-1}^2 + (1-\lambda)r_t^2$$ | Conditional risk estimation |
 | **Shrinkage covariance** | Blend sample covariance with a structured target | Stability when assets or features are correlated |
-| **Mean-variance optimizer** | \(\max_w \mu^\top w - \gamma w^\top\Sigma w\) | Forecast-risk trade-offs and constraints |
+| **Mean-variance optimizer** | $$\max_w \mu^\top w - \gamma w^\top\Sigma w$$ | Forecast-risk trade-offs and constraints |
 | **Risk parity** | Equalize estimated risk contributions | Portfolio construction without return forecasts |
 | **GARCH-family model** | Conditional variance dynamics | Volatility clustering and persistence |
 | **State-space model** | Latent state plus observation equation | Time-varying regimes and noisy measurements |
@@ -651,7 +650,7 @@ Each extension should be introduced as a controlled experiment. Add the mathemat
 ## Evaluation Framework
 
 | Dimension | Example measurement | Why it matters |
-|-----------|---------------------|----------------|
+| --- | --- | --- |
 | Forecast quality | MSE, MAE, rank correlation, directional accuracy | Determines whether predictions contain information |
 | Economic value | Net return, turnover-adjusted return | A forecast is not automatically tradable |
 | Risk | Volatility, maximum drawdown, expected shortfall, beta | Captures loss and exposure behavior |
@@ -692,7 +691,7 @@ That is a warning for multiple testing and backtest overfitting. Keep a research
 ## Upgrade Program
 
 | Upgrade | Why it matters |
-|---------|----------------|
+| --- | --- |
 | **Point-in-time fundamentals** | Prevents revised or late-reported data from appearing early |
 | **Survivorship-free universes** | Keeps failed and delisted instruments in historical tests |
 | **Corporate-action reconciliation** | Prevents splits and dividends from corrupting returns |
@@ -728,7 +727,7 @@ This is not investment advice, a recommendation to trade the example assets, a g
 Record every meaningful experiment in a table like this:
 
 | Field | Example |
-|-------|---------|
+| --- | --- |
 | Hypothesis | Lagged momentum and volatility features contain stable cross-asset information |
 | Data source | Historical adjusted prices from a documented public provider |
 | As-of date | Explicit final data date used in the run |
@@ -772,7 +771,6 @@ The most important skill is not memorizing a particular optimizer or volatility 
 
 ---
 
-**Project status:** Notebook-ready educational guide  
-**Recommended workflow:** Run the data audit, inspect the feature lags, execute the walk-forward backtest, compare with the benchmark, stress costs, and document the result before considering any further use.
+**Project status:** Notebook-ready educational guide**Recommended workflow:** Run the data audit, inspect the feature lags, execute the walk-forward backtest, compare with the benchmark, stress costs, and document the result before considering any further use.
 
 **Compliance note:** This guide is for research and analysis only, not personalized financial advice.
